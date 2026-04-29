@@ -45,6 +45,14 @@ function proxy(
   delete headers["host"];
   delete headers["accept-encoding"];
 
+  let settled = false;
+  const safe502 = () => {
+    if (settled) return;
+    settled = true;
+    if (!res.headersSent) res.writeHead(502);
+    res.end();
+  };
+
   const upstreamReq = http.request(
     {
       host,
@@ -59,6 +67,11 @@ function proxy(
       const enc = String(upstreamRes.headers["content-encoding"] ?? "").toLowerCase();
 
       if (!isHtml) {
+        if (settled) {
+          upstreamRes.resume();
+          return;
+        }
+        settled = true;
         res.writeHead(upstreamRes.statusCode ?? 200, upstreamRes.headers);
         upstreamRes.pipe(res);
         return;
@@ -72,24 +85,40 @@ function proxy(
 
       stream.on("data", (c) => chunks.push(Buffer.isBuffer(c) ? c : Buffer.from(c)));
       stream.on("end", () => {
+        if (settled) return;
+        settled = true;
         const html = Buffer.concat(chunks).toString("utf8");
         const rewritten = rewriteBodyTag(html, getBuildId());
         const body = Buffer.from(rewritten, "utf8");
         const outHeaders = { ...upstreamRes.headers };
         delete outHeaders["content-encoding"];
+        delete outHeaders["transfer-encoding"];
         outHeaders["content-length"] = String(body.length);
-        res.writeHead(upstreamRes.statusCode ?? 200, outHeaders);
+        if (!res.headersSent) {
+          res.writeHead(upstreamRes.statusCode ?? 200, outHeaders);
+        }
         res.end(body);
       });
-      stream.on("error", () => {
-        res.writeHead(502).end();
-      });
+      stream.on("error", safe502);
     },
   );
 
-  upstreamReq.on("error", () => {
-    res.writeHead(502).end();
+  upstreamReq.on("error", safe502);
+
+  // If the inbound client disconnects, abort the upstream too so we don't leak.
+  req.on("close", () => {
+    if (!settled) {
+      settled = true;
+      upstreamReq.destroy();
+      if (!res.writableEnded) res.end();
+    }
   });
 
-  req.pipe(upstreamReq);
+  // GET/HEAD have no body — end the upstream immediately to avoid pipe stalls.
+  const method = (req.method ?? "GET").toUpperCase();
+  if (method === "GET" || method === "HEAD" || method === "DELETE" || method === "OPTIONS") {
+    upstreamReq.end();
+  } else {
+    req.pipe(upstreamReq);
+  }
 }

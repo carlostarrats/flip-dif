@@ -37,21 +37,32 @@ export async function waitForReady(
 function waitFor200(url: string, timeoutMs: number, intervalMs: number): Promise<void> {
   const deadline = Date.now() + timeoutMs;
   return new Promise((resolve, reject) => {
+    let done = false;
+    const finish = (err?: Error) => {
+      if (done) return;
+      done = true;
+      if (err) reject(err);
+      else resolve();
+    };
     const tick = () => {
+      if (done) return;
+      let settled = false;
+      const settle = (success: boolean) => {
+        if (settled) return;
+        settled = true;
+        if (success) finish();
+        else if (Date.now() > deadline) finish(new Error("timeout waiting for 200"));
+        else setTimeout(tick, intervalMs);
+      };
       const req = http.get(url, (res) => {
         res.resume();
-        if (res.statusCode === 200) resolve();
-        else retry();
+        settle(res.statusCode === 200);
       });
-      req.on("error", retry);
+      req.on("error", () => settle(false));
       req.setTimeout(intervalMs * 4, () => {
         req.destroy();
-        retry();
+        settle(false);
       });
-    };
-    const retry = () => {
-      if (Date.now() > deadline) reject(new Error("timeout waiting for 200"));
-      else setTimeout(tick, intervalMs);
     };
     tick();
   });

@@ -1,3 +1,5 @@
+import { findPriorWithRoute, imgUrl, escapeHtml } from "/views/lib.js";
+
 export async function renderProject(root, hashedCwd) {
   root.innerHTML = `<div class="empty">…</div>`;
   const res = await fetch(`/api/projects/${hashedCwd}/snapshots`);
@@ -17,16 +19,9 @@ export async function renderProject(root, hashedCwd) {
   let route = snapshots[0].captures[0]?.route ?? "/";
   let mode = "after";
 
-  const findPriorWithRoute = (idx, r) => {
-    for (let i = idx + 1; i < snapshots.length; i++) {
-      if (snapshots[i].captures.find((c) => c.route === r)) return snapshots[i];
-    }
-    return null;
-  };
-
   const draw = () => {
     const after = snapshots[currentIdx];
-    const before = findPriorWithRoute(currentIdx, route);
+    const before = findPriorWithRoute(snapshots, currentIdx, route);
     const cap = after.captures.find((c) => c.route === route) ?? after.captures[0];
     if (!cap) {
       root.innerHTML = `<div class="empty">No capture for this route.</div>`;
@@ -79,15 +74,4 @@ export async function renderProject(root, hashedCwd) {
     });
   };
   draw();
-}
-
-function imgUrl(cwd, sha, route) {
-  const slug = route === "/" ? "_root" : route.replace(/^\//, "").replace(/\//g, "_");
-  return `/snapshots/${cwd}/${sha}/${slug}.png`;
-}
-
-function escapeHtml(s) {
-  return String(s).replace(/[&<>"']/g, (c) => ({
-    "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;",
-  }[c]));
 }
