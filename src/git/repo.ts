@@ -1,4 +1,4 @@
-import simpleGit from "simple-git";
+import { simpleGit } from "simple-git";
 import { existsSync } from "node:fs";
 import { join } from "node:path";
 
