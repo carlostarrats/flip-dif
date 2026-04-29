@@ -2,6 +2,56 @@
 
 #root { display: flex; flex-direction: column; min-height: 100vh; }
 
+/* Base button + select. Wrapped in :where() so the rule has zero
+ * specificity — any class-scoped override (like .home-tab) wins
+ * naturally without needing to !important the world. */
+:where(button, select) {
+  background: transparent;
+  color: var(--foreground);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: var(--space-2) var(--space-3);
+  font-family: var(--font-sans);
+  font-size: var(--text-sm);
+  line-height: 1.2;
+  transition: border-color var(--duration-base) var(--ease-standard),
+              background var(--duration-base) var(--ease-standard),
+              color var(--duration-base) var(--ease-standard);
+  cursor: pointer;
+}
+:where(button:hover:not([disabled]),
+       select:hover) { border-color: var(--ring); }
+:where(button:focus-visible,
+       select:focus-visible) {
+  outline: 2px solid var(--ring);
+  outline-offset: 1px;
+}
+:where(button[disabled]) { opacity: 0.4; cursor: not-allowed; }
+:where(button[aria-pressed="true"]) {
+  background: var(--accent);
+  border-color: var(--ring);
+}
+
+/* Custom select — kill the native chrome and draw our own caret in the
+ * Frank style (subtle muted chevron). The right padding makes room for it. */
+:where(select) {
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+  padding-right: calc(var(--space-3) + 14px);
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6' fill='none'><path d='M1 1L5 5L9 1' stroke='%238a8a90' stroke-width='1.4' stroke-linecap='round' stroke-linejoin='round'/></svg>");
+  background-repeat: no-repeat;
+  background-position: right var(--space-3) center;
+}
+:where(select:hover) {
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6' fill='none'><path d='M1 1L5 5L9 1' stroke='%23f5f5f7' stroke-width='1.4' stroke-linecap='round' stroke-linejoin='round'/></svg>");
+}
+:where(select)::-ms-expand { display: none; }
+:where(select option) {
+  background: var(--card);
+  color: var(--foreground);
+}
+
 /* ── Home view ──────────────────────────────────────────────────────────── */
 
 .home {
@@ -17,7 +67,10 @@
   display: flex;
   align-items: center;
   gap: var(--space-2);
+  padding: 0;
   margin-bottom: var(--space-8);
+  background: transparent;
+  border: none;
 }
 .home-logo-row {
   display: flex;
@@ -25,11 +78,11 @@
   gap: var(--space-2);
 }
 .home-logo {
-  height: 56px;
+  height: 96px;
   filter: brightness(0) invert(1);
 }
 @media (min-width: 1024px) {
-  .home-logo { height: 72px; }
+  .home-logo { height: 128px; }
 }
 .home-version {
   font-size: 11px;
@@ -100,7 +153,8 @@
   color: var(--foreground);
 }
 
-/* Right column: terminal-frame around projects with tabs straddling the top edge. */
+/* Right column: terminal-frame around active project's commits. Tabs (one per
+ * project) straddle the top edge — same pattern as Frank. */
 .home-col-right {
   border: 1px solid var(--border);
   padding: 0 var(--space-5);
@@ -112,31 +166,52 @@
 .home-tabs {
   display: flex;
   gap: var(--space-1);
-  align-self: flex-start;
-  flex-wrap: wrap;
+  align-self: stretch;
   margin: calc(var(--space-4) * -1) calc(var(--space-2) * -1) var(--space-5);
   position: relative;
   z-index: 1;
+  /* When N tabs overflow, scroll horizontally with hidden scrollbar
+   * (Frank's mobile pattern). Keeps the strip a single line at any size. */
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
 }
+.home-tabs::-webkit-scrollbar { display: none; }
+
 .home-tab {
+  /* Reset all inherited button chrome — only the underline carries state. */
   background: var(--background);
   color: var(--muted-foreground);
+  border: none;
+  border-bottom: 2px solid transparent;
+  border-radius: 0;
   padding: 0 var(--space-3);
   height: 1.75rem;
+  flex-shrink: 0;
+  white-space: nowrap;
   font-family: var(--font-sans);
   font-size: var(--text-xs);
   text-transform: uppercase;
   letter-spacing: 0.08em;
-  border: 1px solid transparent;
-  border-bottom: 2px solid transparent;
   cursor: pointer;
   transition: color var(--duration-fast) var(--ease-standard),
-              border-color var(--duration-fast) var(--ease-standard);
+              border-bottom-color var(--duration-fast) var(--ease-standard);
 }
-.home-tab:hover { color: var(--foreground); }
+.home-tab:hover {
+  color: var(--foreground);
+  border-color: transparent;
+  border-bottom-color: transparent;
+}
 .home-tab.active {
   color: var(--foreground);
   border-bottom-color: var(--foreground);
+}
+.home-tab.active:hover { border-bottom-color: var(--foreground); }
+.home-tab:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: -2px;
 }
 
 .home-section-head {
@@ -154,10 +229,7 @@
   flex: 1;
   border-top: 1px solid var(--border);
 }
-.home-section-count {
-  flex-shrink: 0;
-  color: var(--muted-foreground);
-}
+.home-section-count { flex-shrink: 0; }
 
 .home-projects {
   flex: 1;
@@ -165,15 +237,15 @@
   padding-bottom: var(--space-4);
 }
 
-.projects {
+/* Commit list (rows below the tabs — one per commit/diff). */
+.commits {
   list-style: none;
   padding: 0;
   margin: 0;
   display: flex;
   flex-direction: column;
-  gap: var(--space-1);
 }
-.project-card {
+.commit-row {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -184,108 +256,53 @@
   color: inherit;
   transition: background var(--duration-fast) var(--ease-standard);
 }
-.project-card:hover { background: var(--muted); }
-.project-card:focus-visible {
+.commit-row:hover { background: var(--muted); }
+.commit-row:focus-visible {
   outline: 2px solid var(--ring);
   outline-offset: 1px;
 }
-.project-card-info {
+.commit-row-info {
   display: flex;
   flex-direction: column;
   gap: 2px;
   min-width: 0;
 }
-.project-card-name {
+.commit-row-head {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-2);
+  min-width: 0;
+}
+.commit-sha {
+  font-variant-numeric: tabular-nums;
+  font-size: var(--text-sm);
+  color: var(--muted-foreground);
+  flex-shrink: 0;
+}
+.commit-msg {
   font-size: var(--text-base);
-  font-weight: 500;
   color: var(--foreground);
+  font-weight: 500;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  min-width: 0;
 }
-.project-card-meta {
+.commit-meta {
   font-size: var(--text-xs);
   color: var(--muted-foreground);
-}
-.project-card-stats {
-  display: flex;
-  align-items: center;
-  gap: var(--space-3);
   flex-shrink: 0;
-}
-.stat {
-  display: inline-flex;
-  align-items: baseline;
-  gap: var(--space-1);
-  font-variant-numeric: tabular-nums;
-}
-.stat-value {
-  font-size: var(--text-base);
-  color: var(--foreground);
-  font-weight: 500;
-}
-.stat-label {
-  font-size: var(--text-xs);
-  color: var(--muted-foreground);
-  text-transform: lowercase;
-  letter-spacing: 0;
 }
 
 /* ── Project view (commit selector + before/after/diff) ─────────────────── */
 
-header {
+.project-toolbar {
   display: flex;
   gap: var(--space-3);
   align-items: center;
   padding: var(--space-3) var(--space-4);
   border-bottom: 1px solid var(--border);
   background: var(--card);
-}
-
-button, select {
-  background: transparent;
-  color: var(--foreground);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  padding: var(--space-2) var(--space-3);
-  font-family: var(--font-sans);
-  font-size: var(--text-sm);
-  line-height: 1.2;
-  transition: border-color var(--duration-base) var(--ease-standard),
-              background var(--duration-base) var(--ease-standard);
-  cursor: pointer;
-}
-button:hover:not([disabled]),
-select:hover { border-color: var(--ring); }
-button:focus-visible,
-select:focus-visible {
-  outline: 2px solid var(--ring);
-  outline-offset: 1px;
-}
-button[disabled] { opacity: 0.4; cursor: not-allowed; }
-button[aria-pressed="true"] {
-  background: var(--accent);
-  border-color: var(--ring);
-}
-
-/* Custom select — kill the native chrome and draw our own caret in the
- * Frank style (subtle muted chevron). The right padding makes room for it. */
-select {
-  -webkit-appearance: none;
-  -moz-appearance: none;
-  appearance: none;
-  padding-right: calc(var(--space-3) + 14px);
-  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6' fill='none'><path d='M1 1L5 5L9 1' stroke='%238a8a90' stroke-width='1.4' stroke-linecap='round' stroke-linejoin='round'/></svg>");
-  background-repeat: no-repeat;
-  background-position: right var(--space-3) center;
-}
-select:hover {
-  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6' fill='none'><path d='M1 1L5 5L9 1' stroke='%23f5f5f7' stroke-width='1.4' stroke-linecap='round' stroke-linejoin='round'/></svg>");
-}
-select::-ms-expand { display: none; }
-select option {
-  background: var(--card);
-  color: var(--foreground);
 }
 
 .canvas {

@@ -4,13 +4,13 @@ export async function renderProject(root, hashedCwd) {
   root.innerHTML = `<div class="empty">…</div>`;
   const res = await fetch(`/api/projects/${hashedCwd}/snapshots`);
   if (!res.ok) {
-    root.innerHTML = `<header><a href="#/" class="back">← back</a></header>
+    root.innerHTML = `<header class="project-toolbar"><a href="#/" class="back">← back</a></header>
       <div class="empty">Project not found.</div>`;
     return;
   }
   const snapshots = await res.json();
   if (snapshots.length === 0) {
-    root.innerHTML = `<header><a href="#/" class="back">← back</a></header>
+    root.innerHTML = `<header class="project-toolbar"><a href="#/" class="back">← back</a></header>
       <div class="empty">Flip is now active. Your baseline is set.</div>`;
     return;
   }
@@ -37,7 +37,7 @@ export async function renderProject(root, hashedCwd) {
     }
 
     root.innerHTML = `
-      <header>
+      <header class="project-toolbar">
         <a href="#/" class="back">← back</a>
         <select class="commit">${snapshots.map((s, i) =>
           `<option value="${i}" ${i === currentIdx ? "selected" : ""}>${s.sha.slice(0, 7)} · ${escapeHtml(s.message)}</option>`,
