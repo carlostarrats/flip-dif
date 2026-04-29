@@ -277,20 +277,14 @@
 .home-section-head {
   display: flex;
   align-items: center;
-  gap: var(--space-3);
+  gap: var(--space-4);
   color: var(--muted-foreground);
   font-size: var(--text-xs);
   letter-spacing: 0.08em;
   text-transform: uppercase;
   margin-bottom: var(--space-4);
 }
-.home-section-head::after {
-  content: '';
-  flex: 1;
-  border-top: 1px solid var(--border);
-}
 .home-section-count { flex-shrink: 0; }
-.home-section-spacer { flex: 1; }
 .home-section-actions { flex-shrink: 0; display: inline-flex; align-items: center; }
 
 .home-projects {
@@ -310,11 +304,19 @@
 .commit-row-li {
   position: relative;
   display: flex;
-  align-items: stretch;
+  align-items: center;
+  gap: var(--space-1);
 }
+/* Reveal the kebab on row hover/focus, and on hover of the kebab itself
+ * so its hit target survives once the trigger gets focus. */
 .commit-row-li:hover .commit-row-kebab .kebab-trigger,
 .commit-row-li:focus-within .commit-row-kebab .kebab-trigger {
   opacity: 1;
+}
+/* When this row's menu is open, lift the entire row above sibling rows
+ * so the absolutely-positioned popover doesn't paint behind later rows. */
+.commit-row-li:has(.kebab-trigger[aria-expanded="true"]) {
+  z-index: 50;
 }
 .commit-row {
   flex: 1;
@@ -323,7 +325,6 @@
   justify-content: space-between;
   gap: var(--space-4);
   padding: var(--space-3) var(--space-4);
-  padding-right: calc(var(--space-3) + 32px);
   border-radius: var(--radius-md);
   text-decoration: none;
   color: inherit;
@@ -336,16 +337,18 @@
   outline-offset: 1px;
 }
 .commit-row-kebab {
-  position: absolute;
-  right: var(--space-2);
-  top: 50%;
-  transform: translateY(-50%);
+  display: inline-flex;
+  align-items: center;
+  flex-shrink: 0;
+  width: 32px;
+  justify-content: center;
 }
 .commit-row-kebab .kebab-trigger {
   opacity: 0;
   transition: opacity var(--duration-fast) var(--ease-standard);
 }
-.commit-row-kebab .kebab-trigger:focus-visible { opacity: 1; }
+.commit-row-kebab .kebab-trigger:focus-visible,
+.commit-row-kebab .kebab-trigger[aria-expanded="true"] { opacity: 1; }
 .commit-row-info {
   display: flex;
   flex-direction: column;
@@ -568,7 +571,7 @@
   background: var(--card);
   border: 1px solid var(--border);
   border-radius: var(--radius);
-  z-index: 100;
+  z-index: 200;
   padding: var(--space-1);
   box-shadow: var(--shadow-md);
 }

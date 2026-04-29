@@ -91,7 +91,6 @@ export async function renderHome(root) {
         <div class="home-section-head">
           <span>commits</span>
           <span class="home-section-count">${commits.length}</span>
-          <span class="home-section-spacer"></span>
           <span class="home-section-actions" id="project-actions"></span>
         </div>
         ${commits.length === 0
