@@ -111,4 +111,33 @@ describe("snapCommit", () => {
     const r2 = await snapCommit({ home: HOME, cwd: CWD, url: "http://localhost:3000", browser: fakeBrowser, capturer: fakeCapturer });
     expect(r2.routes).toEqual([]);
   });
+
+  it("captures cleanly when prior snapshot was a manual (non-git) one (regression)", async () => {
+    // Seed a synthetic manual-<ts> snapshot, as `flip snap` would write
+    // before the user ran `git init`.
+    const { writeSnapshot } = await import("../../src/storage/snapshots.js");
+    const { PNG } = await import("pngjs");
+    const blank = (() => {
+      const png = new PNG({ width: 1, height: 1 });
+      png.data.fill(0);
+      return PNG.sync.write(png);
+    })();
+    writeSnapshot(
+      HOME,
+      CWD,
+      { sha: `manual-${Date.now() - 1000}`, message: "manual", timestamp: 1 },
+      [{ route: "/", pngBuffer: blank, width: 1, height: 1 }],
+    );
+    // Now run snapCommit against the git HEAD — must not throw on git diff
+    // and must capture instead of staying silent.
+    const r = await snapCommit({
+      home: HOME,
+      cwd: CWD,
+      url: "http://localhost:3000",
+      browser: fakeBrowser,
+      capturer: fakeCapturer,
+    });
+    expect(r.routes.length).toBeGreaterThan(0);
+    expect(listSnapshots(HOME, CWD).length).toBe(2);
+  });
 });

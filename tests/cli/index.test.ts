@@ -26,4 +26,10 @@ describe("CLI parser", () => {
   it("rejects unknown commands", () => {
     expect(() => parseArgs(["fly"])).toThrow(/unknown command/);
   });
+
+  it("recognizes --help, -h, help", () => {
+    expect(parseArgs(["--help"])).toEqual({ cmd: "help" });
+    expect(parseArgs(["-h"])).toEqual({ cmd: "help" });
+    expect(parseArgs(["help"])).toEqual({ cmd: "help" });
+  });
 });

@@ -43,13 +43,18 @@ export async function snapCommit(
     message = h.message;
     timestamp = h.timestamp;
     const prior = listSnapshots(deps.home, deps.cwd);
-    const fromSha = prior.length > 0 ? prior[0].sha : null;
+    // Manual snapshots use synthetic shas like "manual-<ts>" that aren't valid
+    // git refs. If we ever recorded one (project pre-dated git init), treat
+    // the next git capture as a fresh baseline instead of diffing against it.
+    const priorSha = prior.length > 0 ? prior[0].sha : null;
+    const isHexSha = priorSha !== null && /^[a-f0-9]{40}$/.test(priorSha);
+    const fromSha = isHexSha ? priorSha : null;
     if (fromSha === sha) {
       return { sha, routes: [], warned: false, matched: [] };
     }
     files = await changedFiles(deps.cwd, fromSha, sha);
     routes = filesToRoutes(fw, files);
-    if (routes.length === 0 && prior.length === 0) {
+    if (routes.length === 0 && (prior.length === 0 || !isHexSha)) {
       routes = defaultRoutes(fw);
     }
   } else {

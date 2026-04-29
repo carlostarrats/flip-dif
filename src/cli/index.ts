@@ -3,12 +3,17 @@ export type ParsedArgs =
   | { cmd: "start"; port: number | undefined }
   | { cmd: "stop" }
   | { cmd: "snap" }
-  | { cmd: "clear" };
+  | { cmd: "clear" }
+  | { cmd: "help" };
 
 export function parseArgs(argv: string[]): ParsedArgs {
   if (argv.length === 0) return { cmd: "open" };
   const [head, ...rest] = argv;
   switch (head) {
+    case "--help":
+    case "-h":
+    case "help":
+      return { cmd: "help" };
     case "start": {
       const portFlag = rest.indexOf("--port");
       const port =
@@ -47,5 +52,7 @@ export async function main(argv: string[]): Promise<number> {
       return (await import("./snap.js")).run();
     case "clear":
       return (await import("./clear.js")).run();
+    case "help":
+      return (await import("./help.js")).run();
   }
 }

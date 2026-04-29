@@ -29,10 +29,31 @@ async function getBrowser(): Promise<BrowserHandle> {
   return browser;
 }
 
-async function registerCwd(cwd: string, port?: number): Promise<{ ok: true; alreadyRegistered: boolean }> {
+async function attachWatcher(state: ProjectState): Promise<void> {
+  const w = await watchHead(state.cwd);
+  w.on("head", () => {
+    state.queue.enqueue(async () => {
+      await runSnap(state);
+    });
+  });
+  state.watcher = w;
+}
+
+async function registerCwd(cwd: string, port?: number): Promise<{ ok: true; alreadyRegistered: boolean; watcherAttached: boolean }> {
   const existing = registry.get(cwd);
   if (existing) {
-    return { ok: true, alreadyRegistered: true };
+    // User may have run `git init` since last register — pick that up so
+    // future commits trigger captures.
+    let watcherAttached = !!existing.watcher;
+    if (!existing.watcher && isGitRepo(cwd)) {
+      await attachWatcher(existing);
+      watcherAttached = true;
+      // Capture the new HEAD so the user gets a baseline.
+      existing.queue.enqueue(async () => {
+        await runSnap(existing);
+      });
+    }
+    return { ok: true, alreadyRegistered: true, watcherAttached };
   }
   const fw = detectFramework(cwd);
   if (fw.kind === "unknown") {
@@ -70,13 +91,7 @@ async function registerCwd(cwd: string, port?: number): Promise<{ ok: true; alre
   };
 
   if (isGitRepo(cwd)) {
-    const w = await watchHead(cwd);
-    w.on("head", () => {
-      state.queue.enqueue(async () => {
-        await runSnap(state);
-      });
-    });
-    state.watcher = w;
+    await attachWatcher(state);
   }
   registry.add(state);
 
@@ -84,7 +99,7 @@ async function registerCwd(cwd: string, port?: number): Promise<{ ok: true; alre
   state.queue.enqueue(async () => {
     await runSnap(state);
   });
-  return { ok: true, alreadyRegistered: false };
+  return { ok: true, alreadyRegistered: false, watcherAttached: !!state.watcher };
 }
 
 async function runSnap(state: ProjectState): Promise<void> {

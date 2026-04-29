@@ -1,5 +1,6 @@
 import { homedir } from "node:os";
 import { exec } from "node:child_process";
+import http from "node:http";
 import { fileURLToPath } from "node:url";
 import { dirname, resolve } from "node:path";
 import { isRunning, spawnDaemon } from "../daemon/lifecycle.js";
@@ -66,7 +67,39 @@ export async function run(port?: number): Promise<number> {
   } else {
     console.log("flip: ready. Run 'flip snap' to capture.");
   }
+
+  // Soft probe — surface a warning if the dev server isn't responding so
+  // the user knows captures will fail until they start it.
+  const ok = await probeUrl(resolved.url);
+  if (!ok) {
+    console.log(`flip: warning — ${watchTarget} didn't respond. Start your dev server before committing or captures will fail.`);
+  }
   return 0;
+}
+
+function probeUrl(url: string, timeoutMs = 1500): Promise<boolean> {
+  return new Promise((resolve) => {
+    let done = false;
+    const finish = (v: boolean) => {
+      if (!done) {
+        done = true;
+        resolve(v);
+      }
+    };
+    const timer = setTimeout(() => {
+      req.destroy();
+      finish(false);
+    }, timeoutMs);
+    const req = http.get(url, (res) => {
+      clearTimeout(timer);
+      res.resume();
+      finish(true);
+    });
+    req.on("error", () => {
+      clearTimeout(timer);
+      finish(false);
+    });
+  });
 }
 
 function openBrowser(url: string): void {
