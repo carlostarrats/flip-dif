@@ -8,6 +8,7 @@ export async function renderHome(root) {
 
   let activeIdx = 0;
 
+  const totalCommits = projects.reduce((acc, p) => acc + (p.snapshotCount ?? 0), 0);
   const drawShell = () => `
     <div class="home">
       <header class="home-masthead">
@@ -16,6 +17,16 @@ export async function renderHome(root) {
           <span class="home-version">v0.1</span>
         </div>
         <div class="home-masthead-spacer"></div>
+        <div class="home-stats">
+          <span class="home-stat">
+            <span class="home-stat-value">${projects.length}</span>
+            <span class="home-stat-label">${projects.length === 1 ? "project" : "projects"}</span>
+          </span>
+          <span class="home-stat">
+            <span class="home-stat-value">${totalCommits}</span>
+            <span class="home-stat-label">${totalCommits === 1 ? "commit" : "commits"}</span>
+          </span>
+        </div>
       </header>
 
       <div class="home-grid">

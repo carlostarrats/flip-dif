@@ -1,4 +1,5 @@
 import { findPriorWithRoute, imgUrl, escapeHtml } from "/views/lib.js";
+import { mountDropdown } from "/views/dropdown.js";
 
 export async function renderProject(root, hashedCwd) {
   root.innerHTML = `<div class="empty">…</div>`;
@@ -39,12 +40,8 @@ export async function renderProject(root, hashedCwd) {
     root.innerHTML = `
       <header class="project-toolbar">
         <a href="#/" class="back">← back</a>
-        <select class="commit">${snapshots.map((s, i) =>
-          `<option value="${i}" ${i === currentIdx ? "selected" : ""}>${s.sha.slice(0, 7)} · ${escapeHtml(s.message)}</option>`,
-        ).join("")}</select>
-        <select class="route">${after.captures.map((c) =>
-          `<option value="${c.route}" ${c.route === route ? "selected" : ""}>${escapeHtml(c.route)}</option>`,
-        ).join("")}</select>
+        <div class="commit-host"></div>
+        <div class="route-host"></div>
         <span class="spacer"></span>
         <button class="mode" data-m="before" aria-pressed="${mode === "before"}" ${!before ? "disabled" : ""}>before</button>
         <button class="mode" data-m="after" aria-pressed="${mode === "after"}">after</button>
@@ -54,18 +51,34 @@ export async function renderProject(root, hashedCwd) {
         <img src="${src}" width="${cap.width}" height="${cap.height}" alt="" />
       </main>
     `;
-    root.querySelector(".commit").onchange = (e) => {
-      currentIdx = Number(e.target.value);
-      const newAfter = snapshots[currentIdx];
-      if (!newAfter.captures.find((c) => c.route === route)) {
-        route = newAfter.captures[0]?.route ?? "/";
-      }
-      draw();
-    };
-    root.querySelector(".route").onchange = (e) => {
-      route = e.target.value;
-      draw();
-    };
+
+    mountDropdown(root.querySelector(".commit-host"), {
+      ariaLabel: "commit",
+      items: snapshots.map((s, i) => ({
+        value: String(i),
+        label: `${s.sha.slice(0, 7)} · ${s.message}`,
+      })),
+      value: String(currentIdx),
+      onChange: (v) => {
+        currentIdx = Number(v);
+        const newAfter = snapshots[currentIdx];
+        if (!newAfter.captures.find((c) => c.route === route)) {
+          route = newAfter.captures[0]?.route ?? "/";
+        }
+        draw();
+      },
+    });
+
+    mountDropdown(root.querySelector(".route-host"), {
+      ariaLabel: "route",
+      items: after.captures.map((c) => ({ value: c.route, label: c.route })),
+      value: route,
+      onChange: (v) => {
+        route = v;
+        draw();
+      },
+    });
+
     root.querySelectorAll(".mode").forEach((b) => {
       b.onclick = () => {
         mode = b.dataset.m;
@@ -74,4 +87,7 @@ export async function renderProject(root, hashedCwd) {
     });
   };
   draw();
+
+  // Avoid unused-import warning when only types are referenced
+  void escapeHtml;
 }
