@@ -178,6 +178,24 @@
   border-radius: var(--radius-sm);
   color: var(--foreground);
 }
+.home-howto-foot {
+  font-size: var(--text-xs);
+  line-height: 1.6;
+  color: var(--muted-foreground);
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--border);
+}
+.home-howto-foot strong {
+  color: var(--foreground);
+  font-weight: 500;
+}
+.home-howto-foot code {
+  background: var(--muted);
+  padding: 0 var(--space-1);
+  border-radius: var(--radius-sm);
+  color: var(--foreground);
+  font-size: 0.95em;
+}
 
 /* Right column: terminal-frame around active project's commits. Tabs (one per
  * project) straddle the top edge — same pattern as Frank. */
@@ -189,13 +207,16 @@
   min-height: 0;
 }
 
-.home-tabs {
-  display: flex;
-  gap: var(--space-1);
-  align-self: stretch;
+/* Tabs sit straddling the panel's top edge. The wrap is the negative-margin
+ * positioner so the bare <nav> can stay simple. */
+.home-tabs-wrap {
   margin: calc(var(--space-4) * -1) calc(var(--space-2) * -1) var(--space-5);
   position: relative;
   z-index: 1;
+}
+.home-tabs {
+  display: flex;
+  gap: var(--space-1);
   /* When N tabs overflow, scroll horizontally with hidden scrollbar
    * (Frank's mobile pattern). Keeps the strip a single line at any size. */
   flex-wrap: nowrap;
@@ -205,6 +226,20 @@
   -ms-overflow-style: none;
 }
 .home-tabs::-webkit-scrollbar { display: none; }
+/* Edge-fade visual cue: when the tab strip overflows in a direction, fade
+ * the corresponding edge so the user sees there's more content there. */
+.home-tabs[data-overflow="right"] {
+  -webkit-mask-image: linear-gradient(to right, black 0%, black 88%, transparent 100%);
+  mask-image: linear-gradient(to right, black 0%, black 88%, transparent 100%);
+}
+.home-tabs[data-overflow="left"] {
+  -webkit-mask-image: linear-gradient(to right, transparent 0%, black 12%, black 100%);
+  mask-image: linear-gradient(to right, transparent 0%, black 12%, black 100%);
+}
+.home-tabs[data-overflow="both"] {
+  -webkit-mask-image: linear-gradient(to right, transparent 0%, black 8%, black 92%, transparent 100%);
+  mask-image: linear-gradient(to right, transparent 0%, black 8%, black 92%, transparent 100%);
+}
 
 .home-tab {
   /* Reset all inherited button chrome — only the underline carries state. */
