@@ -2,6 +2,237 @@
 
 #root { display: flex; flex-direction: column; min-height: 100vh; }
 
+/* ── Home view ──────────────────────────────────────────────────────────── */
+
+.home {
+  min-height: 100%;
+  padding: var(--space-8) var(--space-10);
+  max-width: 1400px;
+  margin: 0 auto;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.home-masthead {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin-bottom: var(--space-8);
+}
+.home-logo-row {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-2);
+}
+.home-logo {
+  height: 56px;
+  filter: brightness(0) invert(1);
+}
+@media (min-width: 1024px) {
+  .home-logo { height: 72px; }
+}
+.home-version {
+  font-size: 11px;
+  color: var(--muted-foreground);
+  font-weight: 400;
+}
+.home-masthead-spacer { flex: 1; }
+
+/* Two columns on desktop, stack on mobile. */
+.home-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--space-10);
+}
+@media (min-width: 1024px) {
+  .home-grid {
+    grid-template-columns: minmax(0, 6fr) minmax(280px, 4fr);
+    gap: var(--space-12);
+    align-items: start;
+  }
+}
+.home-col { display: flex; flex-direction: column; gap: var(--space-6); min-width: 0; }
+
+/* Terminal-frame panel for left column (about / how it works). */
+.home-panel {
+  position: relative;
+  border: 1px solid var(--border);
+  padding: var(--space-5);
+}
+.home-panel[data-title]::before {
+  content: attr(data-title);
+  position: absolute;
+  top: 0;
+  left: var(--space-3);
+  transform: translateY(-50%);
+  background: var(--background);
+  padding: 0 var(--space-2);
+  color: var(--muted-foreground);
+  font-size: var(--text-xs);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+.home-panel > * + * { margin-top: var(--space-3); }
+
+.home-headline {
+  font-size: var(--text-xl);
+  font-weight: 600;
+  line-height: 1.3;
+  color: var(--foreground);
+}
+.home-lede {
+  font-size: var(--text-sm);
+  line-height: 1.6;
+  color: var(--muted-foreground);
+}
+.home-howto {
+  list-style: decimal inside;
+  font-size: var(--text-sm);
+  line-height: 1.7;
+  color: var(--muted-foreground);
+  padding-left: var(--space-1);
+}
+.home-howto li + li { margin-top: var(--space-2); }
+.home-howto code {
+  background: var(--muted);
+  padding: 0 var(--space-2);
+  border-radius: var(--radius-sm);
+  color: var(--foreground);
+}
+
+/* Right column: terminal-frame around projects with tabs straddling the top edge. */
+.home-col-right {
+  border: 1px solid var(--border);
+  padding: 0 var(--space-5);
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.home-tabs {
+  display: flex;
+  gap: var(--space-1);
+  align-self: flex-start;
+  flex-wrap: wrap;
+  margin: calc(var(--space-4) * -1) calc(var(--space-2) * -1) var(--space-5);
+  position: relative;
+  z-index: 1;
+}
+.home-tab {
+  background: var(--background);
+  color: var(--muted-foreground);
+  padding: 0 var(--space-3);
+  height: 1.75rem;
+  font-family: var(--font-sans);
+  font-size: var(--text-xs);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  border: 1px solid transparent;
+  border-bottom: 2px solid transparent;
+  cursor: pointer;
+  transition: color var(--duration-fast) var(--ease-standard),
+              border-color var(--duration-fast) var(--ease-standard);
+}
+.home-tab:hover { color: var(--foreground); }
+.home-tab.active {
+  color: var(--foreground);
+  border-bottom-color: var(--foreground);
+}
+
+.home-section-head {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  color: var(--muted-foreground);
+  font-size: var(--text-xs);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  margin-bottom: var(--space-4);
+}
+.home-section-head::after {
+  content: '';
+  flex: 1;
+  border-top: 1px solid var(--border);
+}
+.home-section-count {
+  flex-shrink: 0;
+  color: var(--muted-foreground);
+}
+
+.home-projects {
+  flex: 1;
+  min-height: 0;
+  padding-bottom: var(--space-4);
+}
+
+.projects {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+.project-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-md);
+  text-decoration: none;
+  color: inherit;
+  transition: background var(--duration-fast) var(--ease-standard);
+}
+.project-card:hover { background: var(--muted); }
+.project-card:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 1px;
+}
+.project-card-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+.project-card-name {
+  font-size: var(--text-base);
+  font-weight: 500;
+  color: var(--foreground);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.project-card-meta {
+  font-size: var(--text-xs);
+  color: var(--muted-foreground);
+}
+.project-card-stats {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  flex-shrink: 0;
+}
+.stat {
+  display: inline-flex;
+  align-items: baseline;
+  gap: var(--space-1);
+  font-variant-numeric: tabular-nums;
+}
+.stat-value {
+  font-size: var(--text-base);
+  color: var(--foreground);
+  font-weight: 500;
+}
+.stat-label {
+  font-size: var(--text-xs);
+  color: var(--muted-foreground);
+  text-transform: lowercase;
+  letter-spacing: 0;
+}
+
+/* ── Project view (commit selector + before/after/diff) ─────────────────── */
+
 header {
   display: flex;
   gap: var(--space-3);
@@ -9,12 +240,6 @@ header {
   padding: var(--space-3) var(--space-4);
   border-bottom: 1px solid var(--border);
   background: var(--card);
-}
-
-header h1 {
-  font-size: var(--text-lg);
-  font-weight: 500;
-  letter-spacing: 0.02em;
 }
 
 button, select {
@@ -25,15 +250,42 @@ button, select {
   padding: var(--space-2) var(--space-3);
   font-family: var(--font-sans);
   font-size: var(--text-sm);
+  line-height: 1.2;
   transition: border-color var(--duration-base) var(--ease-standard),
               background var(--duration-base) var(--ease-standard);
+  cursor: pointer;
 }
 button:hover:not([disabled]),
 select:hover { border-color: var(--ring); }
+button:focus-visible,
+select:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 1px;
+}
 button[disabled] { opacity: 0.4; cursor: not-allowed; }
 button[aria-pressed="true"] {
   background: var(--accent);
   border-color: var(--ring);
+}
+
+/* Custom select — kill the native chrome and draw our own caret in the
+ * Frank style (subtle muted chevron). The right padding makes room for it. */
+select {
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+  padding-right: calc(var(--space-3) + 14px);
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6' fill='none'><path d='M1 1L5 5L9 1' stroke='%238a8a90' stroke-width='1.4' stroke-linecap='round' stroke-linejoin='round'/></svg>");
+  background-repeat: no-repeat;
+  background-position: right var(--space-3) center;
+}
+select:hover {
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6' fill='none'><path d='M1 1L5 5L9 1' stroke='%23f5f5f7' stroke-width='1.4' stroke-linecap='round' stroke-linejoin='round'/></svg>");
+}
+select::-ms-expand { display: none; }
+select option {
+  background: var(--card);
+  color: var(--foreground);
 }
 
 .canvas {
@@ -53,21 +305,6 @@ button[aria-pressed="true"] {
   margin: var(--space-12) auto 0;
 }
 
-.projects { list-style: none; padding: 0; margin: 0; }
-.projects li a {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: var(--space-4) var(--space-6);
-  color: inherit;
-  text-decoration: none;
-  border-bottom: 1px solid var(--border);
-  transition: background var(--duration-fast) var(--ease-standard);
-}
-.projects li a:hover { background: var(--muted); }
-
-.name { font-size: var(--text-base); }
-.meta { color: var(--muted-foreground); font-size: var(--text-xs); }
 .back {
   color: var(--muted-foreground);
   text-decoration: none;
