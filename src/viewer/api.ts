@@ -2,10 +2,16 @@ import type { IncomingMessage, ServerResponse } from "node:http";
 import { readFile } from "node:fs/promises";
 import { existsSync, statSync, createReadStream, readFileSync } from "node:fs";
 import { join } from "node:path";
-import { listProjects, getProject, type ProjectMeta } from "../storage/projects.js";
-import { listSnapshots } from "../storage/snapshots.js";
+import {
+  listProjects,
+  getProject,
+  deleteProject,
+  type ProjectMeta,
+} from "../storage/projects.js";
+import { listSnapshots, deleteSnapshot } from "../storage/snapshots.js";
 import { generateDiff } from "../diff/pixelmatch.js";
 import { hashCwd, projectDir } from "../storage/paths.js";
+import type { ViewerHooks } from "./server.js";
 
 type Notifications = {
   pending: Array<{ cwd: string; kind: string; message: string }>;
@@ -36,12 +42,43 @@ export async function handleApi(
   res: ServerResponse,
   url: URL,
   home: string,
+  hooks: ViewerHooks = {},
 ): Promise<boolean> {
   const path = url.pathname;
 
   if (path === "/api/projects") {
     const projects = listProjects(home).map((p) => annotate(home, p));
     json(res, 200, projects);
+    return true;
+  }
+
+  // DELETE /api/projects/<hash> — remove project + all snapshots from disk;
+  // also tells the daemon to drop its in-memory state (watcher/proxy/queue).
+  const delProjMatch = path.match(/^\/api\/projects\/([a-f0-9]{12})$/);
+  if (delProjMatch && req.method === "DELETE") {
+    const hashed = delProjMatch[1];
+    const proj = listProjects(home).find((p) => hashCwd(p.cwd) === hashed);
+    if (!proj) {
+      json(res, 404, { error: "not found" });
+      return true;
+    }
+    if (hooks.unregisterProject) await hooks.unregisterProject(proj.cwd);
+    const ok = deleteProject(home, proj.cwd);
+    json(res, ok ? 200 : 500, { ok });
+    return true;
+  }
+
+  // DELETE /api/projects/<hash>/snapshots/<sha> — remove a single snapshot.
+  const delSnapMatch = path.match(/^\/api\/projects\/([a-f0-9]{12})\/snapshots\/([a-zA-Z0-9_-]+)$/);
+  if (delSnapMatch && req.method === "DELETE") {
+    const [, hashed, sha] = delSnapMatch;
+    const proj = listProjects(home).find((p) => hashCwd(p.cwd) === hashed);
+    if (!proj) {
+      json(res, 404, { error: "not found" });
+      return true;
+    }
+    const ok = deleteSnapshot(home, proj.cwd, sha);
+    json(res, ok ? 200 : 404, { ok });
     return true;
   }
 

@@ -135,7 +135,18 @@ async function shutdown(): Promise<void> {
 }
 
 async function bootstrap(): Promise<void> {
-  viewer = await startViewer({ home: HOME, port: VIEWER_PORT });
+  viewer = await startViewer({
+    home: HOME,
+    port: VIEWER_PORT,
+    hooks: {
+      // When the viewer's DELETE /api/projects/:hash endpoint fires, drop the
+      // project from the in-memory registry so its watcher/proxy/queue are
+      // torn down. The disk wipe happens inside the viewer's API handler.
+      unregisterProject: async (cwd: string) => {
+        await registry.remove(cwd);
+      },
+    },
+  });
   log(HOME, `viewer listening on ${viewer.port}`);
 
   ipc = await startIpcServer(socketPath(HOME), async (req: Request) => {

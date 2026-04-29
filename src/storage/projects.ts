@@ -4,6 +4,7 @@ import {
   writeFileSync,
   mkdirSync,
   readdirSync,
+  rmSync,
 } from "node:fs";
 import { join } from "node:path";
 import { flipHome, projectDir } from "./paths.js";
@@ -41,6 +42,13 @@ export function getProject(home: string, cwd: string): ProjectMeta | null {
   } catch {
     return null;
   }
+}
+
+export function deleteProject(home: string, cwd: string): boolean {
+  const dir = projectDir(home, cwd);
+  if (!existsSync(dir)) return false;
+  rmSync(dir, { recursive: true, force: true });
+  return true;
 }
 
 export function listProjects(home: string): ProjectMeta[] {

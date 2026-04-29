@@ -290,6 +290,8 @@
   border-top: 1px solid var(--border);
 }
 .home-section-count { flex-shrink: 0; }
+.home-section-spacer { flex: 1; }
+.home-section-actions { flex-shrink: 0; display: inline-flex; align-items: center; }
 
 .home-projects {
   flex: 1;
@@ -305,22 +307,45 @@
   display: flex;
   flex-direction: column;
 }
+.commit-row-li {
+  position: relative;
+  display: flex;
+  align-items: stretch;
+}
+.commit-row-li:hover .commit-row-kebab .kebab-trigger,
+.commit-row-li:focus-within .commit-row-kebab .kebab-trigger {
+  opacity: 1;
+}
 .commit-row {
+  flex: 1;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: var(--space-4);
   padding: var(--space-3) var(--space-4);
+  padding-right: calc(var(--space-3) + 32px);
   border-radius: var(--radius-md);
   text-decoration: none;
   color: inherit;
   transition: background var(--duration-fast) var(--ease-standard);
+  min-width: 0;
 }
 .commit-row:hover { background: var(--muted); }
 .commit-row:focus-visible {
   outline: 2px solid var(--ring);
   outline-offset: 1px;
 }
+.commit-row-kebab {
+  position: absolute;
+  right: var(--space-2);
+  top: 50%;
+  transform: translateY(-50%);
+}
+.commit-row-kebab .kebab-trigger {
+  opacity: 0;
+  transition: opacity var(--duration-fast) var(--ease-standard);
+}
+.commit-row-kebab .kebab-trigger:focus-visible { opacity: 1; }
 .commit-row-info {
   display: flex;
   flex-direction: column;
@@ -498,6 +523,82 @@
 .dropdown-option[aria-selected="true"] {
   color: var(--foreground);
   background: var(--muted);
+}
+
+/* ── Kebab menu (per-row + per-section actions, e.g. delete) ────────────── */
+
+.kebab {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+.kebab-trigger {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: var(--radius);
+  color: var(--muted-foreground);
+  cursor: pointer;
+  font-size: var(--text-base);
+  line-height: 1;
+  transition: color var(--duration-fast) var(--ease-standard),
+              border-color var(--duration-fast) var(--ease-standard),
+              background var(--duration-fast) var(--ease-standard);
+}
+.kebab-trigger:hover,
+.kebab-trigger[aria-expanded="true"] {
+  color: var(--foreground);
+  border-color: var(--border);
+  background: var(--muted);
+}
+.kebab-trigger:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 1px;
+}
+.kebab-menu {
+  position: absolute;
+  top: calc(100% + 4px);
+  right: 0;
+  min-width: 160px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  z-index: 100;
+  padding: var(--space-1);
+  box-shadow: var(--shadow-md);
+}
+.kebab-menu[hidden] { display: none; }
+.kebab-item {
+  display: block;
+  width: 100%;
+  text-align: left;
+  background: transparent;
+  border: none;
+  border-radius: var(--radius-sm);
+  padding: var(--space-2) var(--space-3);
+  color: var(--foreground);
+  font-family: var(--font-sans);
+  font-size: var(--text-sm);
+  line-height: 1.3;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.kebab-item:hover,
+.kebab-item:focus-visible {
+  background: var(--muted);
+  outline: none;
+}
+.kebab-item.destructive {
+  color: var(--destructive);
+}
+.kebab-item.destructive:hover,
+.kebab-item.destructive:focus-visible {
+  background: color-mix(in oklch, var(--destructive), transparent 88%);
 }
 
 #toasts {

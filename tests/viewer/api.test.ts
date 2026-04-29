@@ -94,4 +94,41 @@ describe("viewer api", () => {
     const r = await fetch(`${base()}/api/notifications`);
     expect(await r.json()).toEqual([]);
   });
+
+  it("DELETE /api/projects/:hash/snapshots/:sha removes a single snapshot", async () => {
+    const h = hashCwd(CWD);
+    const before = await (await fetch(`${base()}/api/projects/${h}/snapshots`)).json();
+    expect(before.length).toBe(2);
+    const r = await fetch(`${base()}/api/projects/${h}/snapshots/a`, { method: "DELETE" });
+    expect(r.status).toBe(200);
+    const after = await (await fetch(`${base()}/api/projects/${h}/snapshots`)).json();
+    expect(after.map((s: { sha: string }) => s.sha)).toEqual(["b"]);
+  });
+
+  it("DELETE /api/projects/:hash removes the project + invokes the unregister hook", async () => {
+    const seenCwds: string[] = [];
+    // Re-mount the viewer with a hook so we can verify it fires.
+    await viewer.stop();
+    const { startViewer } = await import("../../src/viewer/server.js");
+    viewer = await startViewer({
+      home: HOME,
+      port: 0,
+      hooks: {
+        unregisterProject: async (cwd) => {
+          seenCwds.push(cwd);
+        },
+      },
+    });
+    const h = hashCwd(CWD);
+    const r = await fetch(`${base()}/api/projects/${h}`, { method: "DELETE" });
+    expect(r.status).toBe(200);
+    expect(seenCwds).toEqual([CWD]);
+    const list = await (await fetch(`${base()}/api/projects`)).json();
+    expect(list).toEqual([]);
+  });
+
+  it("DELETE /api/projects/:hash returns 404 for unknown project", async () => {
+    const r = await fetch(`${base()}/api/projects/000000000000`, { method: "DELETE" });
+    expect(r.status).toBe(404);
+  });
 });

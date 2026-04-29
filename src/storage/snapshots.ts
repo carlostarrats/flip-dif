@@ -4,6 +4,7 @@ import {
   writeFileSync,
   mkdirSync,
   readdirSync,
+  rmSync,
 } from "node:fs";
 import { join } from "node:path";
 import { projectDir, routeSlug } from "./paths.js";
@@ -64,4 +65,11 @@ export function listSnapshots(home: string, cwd: string): SnapshotMeta[] {
   }
   out.sort((a, b) => b.timestamp - a.timestamp);
   return out;
+}
+
+export function deleteSnapshot(home: string, cwd: string, sha: string): boolean {
+  const dir = join(projectDir(home, cwd), "snapshots", sha);
+  if (!existsSync(dir)) return false;
+  rmSync(dir, { recursive: true, force: true });
+  return true;
 }

@@ -10,7 +10,20 @@ export interface ViewerHandle {
   stop(): Promise<void>;
 }
 
-export async function startViewer(opts: { home: string; port: number }): Promise<ViewerHandle> {
+/**
+ * Optional hook the daemon passes in so the viewer can ask the live
+ * registry to forget about a project (stop watcher, stop proxy, drain
+ * queue). Tests omit it; the daemon supplies it.
+ */
+export type ViewerHooks = {
+  unregisterProject?: (cwd: string) => Promise<void>;
+};
+
+export async function startViewer(opts: {
+  home: string;
+  port: number;
+  hooks?: ViewerHooks;
+}): Promise<ViewerHandle> {
   const __filename = fileURLToPath(import.meta.url);
   const __dirname = dirname(__filename);
   // dist path: <root>/dist/viewer/server.js → public is <root>/dist/viewer/public
@@ -23,7 +36,7 @@ export async function startViewer(opts: { home: string; port: number }): Promise
 
   const server = http.createServer(async (req, res) => {
     try {
-      await handle(req, res, opts.home, publicDir);
+      await handle(req, res, opts.home, publicDir, opts.hooks ?? {});
     } catch (e) {
       res.writeHead(500, { "content-type": "text/plain" }).end((e as Error).message);
     }
@@ -49,9 +62,10 @@ async function handle(
   res: ServerResponse,
   home: string,
   publicDir: string,
+  hooks: ViewerHooks,
 ): Promise<void> {
   const url = new URL(req.url ?? "/", "http://x");
-  if (await handleApi(req, res, url, home)) return;
+  if (await handleApi(req, res, url, home, hooks)) return;
   if (await serveStatic(res, publicDir, url.pathname)) return;
   if (await serveStatic(res, publicDir, "/")) return;
   res.writeHead(404, { "content-type": "text/plain" }).end("not found");
