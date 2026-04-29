@@ -8,7 +8,7 @@ export function resolveDevUrl(opts: {
   cwd: string;
   home: string;
 }): Resolved | null {
-  if (opts.port) return { url: `http://localhost:${opts.port}`, source: "port" };
+  if (opts.port) return { url: `http://127.0.0.1:${opts.port}`, source: "port" };
   const manifest = join(opts.home, ".portless/projects.json");
   if (!existsSync(manifest)) return null;
   try {

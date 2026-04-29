@@ -15,7 +15,7 @@ beforeEach(() => {
 describe("resolveDevUrl", () => {
   it("uses --port when given", () => {
     expect(resolveDevUrl({ port: 3000, cwd: CWD, home: HOME })).toEqual({
-      url: "http://localhost:3000",
+      url: "http://127.0.0.1:3000",
       source: "port",
     });
   });

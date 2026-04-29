@@ -43,10 +43,13 @@ async function registerCwd(cwd: string, port?: number): Promise<{ ok: true; alre
     throw new Error("dev URL not found — pass --port N or use portless");
   }
 
-  const proxy = await startInjectionProxy({ targetUrl: resolved.url }).catch((e) => {
-    log(HOME, `[${cwd}] proxy failed: ${(e as Error).message}; falling back to direct`);
-    return null;
-  });
+  const skipProxy = process.env.FLIP_NO_PROXY === "1";
+  const proxy = skipProxy
+    ? null
+    : await startInjectionProxy({ targetUrl: resolved.url }).catch((e) => {
+        log(HOME, `[${cwd}] proxy failed: ${(e as Error).message}; falling back to direct`);
+        return null;
+      });
 
   const meta = getProject(HOME, cwd) ?? {
     cwd,

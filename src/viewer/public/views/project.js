@@ -17,9 +17,16 @@ export async function renderProject(root, hashedCwd) {
   let route = snapshots[0].captures[0]?.route ?? "/";
   let mode = "after";
 
+  const findPriorWithRoute = (idx, r) => {
+    for (let i = idx + 1; i < snapshots.length; i++) {
+      if (snapshots[i].captures.find((c) => c.route === r)) return snapshots[i];
+    }
+    return null;
+  };
+
   const draw = () => {
     const after = snapshots[currentIdx];
-    const before = snapshots[currentIdx + 1];
+    const before = findPriorWithRoute(currentIdx, route);
     const cap = after.captures.find((c) => c.route === route) ?? after.captures[0];
     if (!cap) {
       root.innerHTML = `<div class="empty">No capture for this route.</div>`;
