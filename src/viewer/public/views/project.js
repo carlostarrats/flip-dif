@@ -1,0 +1,86 @@
+export async function renderProject(root, hashedCwd) {
+  root.innerHTML = `<div class="empty">…</div>`;
+  const res = await fetch(`/api/projects/${hashedCwd}/snapshots`);
+  if (!res.ok) {
+    root.innerHTML = `<header><a href="#/" class="back">← back</a></header>
+      <div class="empty">Project not found.</div>`;
+    return;
+  }
+  const snapshots = await res.json();
+  if (snapshots.length === 0) {
+    root.innerHTML = `<header><a href="#/" class="back">← back</a></header>
+      <div class="empty">Flip is now active. Your baseline is set.</div>`;
+    return;
+  }
+
+  let currentIdx = 0;
+  let route = snapshots[0].captures[0]?.route ?? "/";
+  let mode = "after";
+
+  const draw = () => {
+    const after = snapshots[currentIdx];
+    const before = snapshots[currentIdx + 1];
+    const cap = after.captures.find((c) => c.route === route) ?? after.captures[0];
+    if (!cap) {
+      root.innerHTML = `<div class="empty">No capture for this route.</div>`;
+      return;
+    }
+    let src;
+    if (mode === "after" || (mode !== "after" && !before)) {
+      src = imgUrl(hashedCwd, after.sha, route);
+    } else if (mode === "before") {
+      src = imgUrl(hashedCwd, before.sha, route);
+    } else {
+      src = `/api/diff?cwd=${hashedCwd}&from=${before.sha}&to=${after.sha}&route=${encodeURIComponent(route)}`;
+    }
+
+    root.innerHTML = `
+      <header>
+        <a href="#/" class="back">← back</a>
+        <select class="commit">${snapshots.map((s, i) =>
+          `<option value="${i}" ${i === currentIdx ? "selected" : ""}>${s.sha.slice(0, 7)} · ${escapeHtml(s.message)}</option>`,
+        ).join("")}</select>
+        <select class="route">${after.captures.map((c) =>
+          `<option value="${c.route}" ${c.route === route ? "selected" : ""}>${escapeHtml(c.route)}</option>`,
+        ).join("")}</select>
+        <span class="spacer"></span>
+        <button class="mode" data-m="before" aria-pressed="${mode === "before"}" ${!before ? "disabled" : ""}>before</button>
+        <button class="mode" data-m="after" aria-pressed="${mode === "after"}">after</button>
+        <button class="mode" data-m="diff" aria-pressed="${mode === "diff"}" ${!before ? "disabled" : ""}>diff</button>
+      </header>
+      <main class="canvas">
+        <img src="${src}" width="${cap.width}" height="${cap.height}" alt="" />
+      </main>
+    `;
+    root.querySelector(".commit").onchange = (e) => {
+      currentIdx = Number(e.target.value);
+      const newAfter = snapshots[currentIdx];
+      if (!newAfter.captures.find((c) => c.route === route)) {
+        route = newAfter.captures[0]?.route ?? "/";
+      }
+      draw();
+    };
+    root.querySelector(".route").onchange = (e) => {
+      route = e.target.value;
+      draw();
+    };
+    root.querySelectorAll(".mode").forEach((b) => {
+      b.onclick = () => {
+        mode = b.dataset.m;
+        draw();
+      };
+    });
+  };
+  draw();
+}
+
+function imgUrl(cwd, sha, route) {
+  const slug = route === "/" ? "_root" : route.replace(/^\//, "").replace(/\//g, "_");
+  return `/snapshots/${cwd}/${sha}/${slug}.png`;
+}
+
+function escapeHtml(s) {
+  return String(s).replace(/[&<>"']/g, (c) => ({
+    "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;",
+  }[c]));
+}

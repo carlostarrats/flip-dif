@@ -4,7 +4,7 @@
   "type": "module",
   "bin": { "flip": "./bin/flip.mjs" },
   "scripts": {
-    "build": "tsc -p .",
+    "build": "tsc -p . && node scripts/copy-public.mjs",
     "dev": "tsc -p . --watch",
     "test": "vitest run",
     "test:watch": "vitest",
