@@ -2,7 +2,7 @@
 
 **See what your agent just changed visually — without leaving the terminal.**
 
-![Uploading Screenshot 2026-04-29 at 12.59.01 PM.png…]()
+<img width="1312" height="1061" alt="Screenshot 2026-04-29 at 12 59 01 PM" src="https://github.com/user-attachments/assets/7243c452-d727-40c3-a41d-59fbf1bd4d9c" />
 
 You ask Claude (or Cursor, or whoever) to "tighten up the dashboard spacing." It edits five files. Tests pass. You alt-tab to your dev server, eyeball the page, try to remember what it looked like five minutes ago. Did the fix actually land? Did it nudge anything else?
 
