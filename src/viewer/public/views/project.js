@@ -1,7 +1,7 @@
 import { findPriorWithRoute, imgUrl, escapeHtml } from "/views/lib.js";
 import { mountDropdown } from "/views/dropdown.js";
 
-export async function renderProject(root, hashedCwd) {
+export async function renderProject(root, hashedCwd, initialSha) {
   root.innerHTML = `<div class="empty">…</div>`;
   const res = await fetch(`/api/projects/${hashedCwd}/snapshots`);
   if (!res.ok) {
@@ -16,8 +16,13 @@ export async function renderProject(root, hashedCwd) {
     return;
   }
 
-  let currentIdx = 0;
-  let route = snapshots[0].captures[0]?.route ?? "/";
+  // If the URL deep-links to a specific commit (#/project/<hash>/<sha>),
+  // start there. Otherwise default to the newest commit.
+  const initialIdx = initialSha
+    ? Math.max(0, snapshots.findIndex((s) => s.sha === initialSha))
+    : 0;
+  let currentIdx = initialIdx;
+  let route = snapshots[currentIdx].captures[0]?.route ?? "/";
   let mode = "after";
 
   const draw = () => {

@@ -166,6 +166,42 @@ export async function renderHome(root) {
   };
 
   await drawRight();
+
+  // Live-update poll: every 3s, refetch projects + the active project's
+  // commits and re-render the body if anything changed. This way new
+  // captures appear automatically without a manual refresh.
+  let polling = true;
+  const stopPoll = () => { polling = false; };
+  window.addEventListener("hashchange", stopPoll, { once: true });
+
+  let lastSig = signature(projects, projects[activeIdx]);
+  (async function poll() {
+    while (polling) {
+      await new Promise((r) => setTimeout(r, 3000));
+      if (!polling) break;
+      try {
+        const fresh = await (await fetch("/api/projects")).json();
+        fresh.sort((a, b) => (b.lastSeen ?? 0) - (a.lastSeen ?? 0));
+        const sig = signature(fresh, fresh[activeIdx]);
+        if (sig !== lastSig) {
+          lastSig = sig;
+          // Re-render the whole home view so new tabs appear and the active
+          // project's commit list refreshes.
+          await renderHome(root);
+          return;
+        }
+      } catch {
+        /* network blip — try again */
+      }
+    }
+  })();
+}
+
+function signature(projects, active) {
+  return JSON.stringify({
+    projects: projects.map((p) => `${p.hashedCwd}:${p.snapshotCount}:${p.lastSeen}`),
+    activeCwd: active?.hashedCwd ?? null,
+  });
 }
 
 function commitRow(hashedCwd, c) {
@@ -173,7 +209,7 @@ function commitRow(hashedCwd, c) {
   const label = `${c.sha.slice(0, 7)} ${c.message}`.replace(/"/g, "&quot;");
   return `
     <li class="commit-row-li">
-      <a class="commit-row" href="#/project/${hashedCwd}">
+      <a class="commit-row" href="#/project/${hashedCwd}/${c.sha}">
         <div class="commit-row-info">
           <div class="commit-row-head">
             <span class="commit-sha">${c.sha.slice(0, 7)}</span>

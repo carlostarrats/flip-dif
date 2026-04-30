@@ -4,11 +4,25 @@ import { renderProject } from "/views/project.js";
 const root = document.getElementById("root");
 const toasts = document.getElementById("toasts");
 
-function render() {
+function parseRoute() {
+  // #/project/<hash>            → project view, default to newest commit
+  // #/project/<hash>/<sha>      → project view at a specific commit
   const hash = location.hash || "#/";
   if (hash.startsWith("#/project/")) {
-    const cwdHash = hash.slice("#/project/".length);
-    renderProject(root, cwdHash);
+    const rest = hash.slice("#/project/".length);
+    const slash = rest.indexOf("/");
+    if (slash >= 0) {
+      return { name: "project", cwdHash: rest.slice(0, slash), sha: rest.slice(slash + 1) };
+    }
+    return { name: "project", cwdHash: rest, sha: null };
+  }
+  return { name: "home" };
+}
+
+function render() {
+  const route = parseRoute();
+  if (route.name === "project") {
+    renderProject(root, route.cwdHash, route.sha);
   } else {
     renderHome(root);
   }
