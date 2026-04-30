@@ -40,21 +40,28 @@ export async function renderProject(root, hashedCwd, initialSha) {
     const noPrior = !before;
     let canvasInner;
     if (mode === "after") {
-      canvasInner = `<img src="${imgUrl(hashedCwd, after.sha, route)}" width="${cap.width}" height="${cap.height}" alt="" />`;
+      const alt = `Screenshot of ${route} at commit ${after.sha.slice(0, 7)} — ${after.message}`;
+      canvasInner = `<img src="${imgUrl(hashedCwd, after.sha, route)}" width="${cap.width}" height="${cap.height}" alt="${escapeHtml(alt)}" />`;
     } else if (mode === "before") {
-      canvasInner = noPrior
-        ? `<div class="canvas-message">
+      if (noPrior) {
+        canvasInner = `<div class="canvas-message" role="status">
              <p class="canvas-message-headline">No prior capture for <code>${escapeHtml(route)}</code>.</p>
              <p class="canvas-message-lede">This is the earliest snapshot flip has on disk for this route — there's nothing to compare against yet. Switch to <strong>after</strong> to see this capture, or pick a newer commit from the dropdown.</p>
-           </div>`
-        : `<img src="${imgUrl(hashedCwd, before.sha, route)}" width="${cap.width}" height="${cap.height}" alt="" />`;
+           </div>`;
+      } else {
+        const alt = `Previous screenshot of ${route} at commit ${before.sha.slice(0, 7)} — ${before.message}`;
+        canvasInner = `<img src="${imgUrl(hashedCwd, before.sha, route)}" width="${cap.width}" height="${cap.height}" alt="${escapeHtml(alt)}" />`;
+      }
     } else {
-      canvasInner = noPrior
-        ? `<div class="canvas-message">
+      if (noPrior) {
+        canvasInner = `<div class="canvas-message" role="status">
              <p class="canvas-message-headline">No diff for the first capture.</p>
              <p class="canvas-message-lede">A diff highlights pixels that changed between two snapshots. This is the earliest one for <code>${escapeHtml(route)}</code>, so there's nothing to compare against. Pick a newer commit and the diff will light up.</p>
-           </div>`
-        : `<img src="/api/diff?cwd=${hashedCwd}&from=${before.sha}&to=${after.sha}&route=${encodeURIComponent(route)}" width="${cap.width}" height="${cap.height}" alt="" />`;
+           </div>`;
+      } else {
+        const alt = `Pixel diff of ${route} between commits ${before.sha.slice(0, 7)} and ${after.sha.slice(0, 7)}; changed pixels highlighted in red`;
+        canvasInner = `<img src="/api/diff?cwd=${hashedCwd}&from=${before.sha}&to=${after.sha}&route=${encodeURIComponent(route)}" width="${cap.width}" height="${cap.height}" alt="${escapeHtml(alt)}" />`;
+      }
     }
 
     root.innerHTML = `

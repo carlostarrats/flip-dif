@@ -47,14 +47,34 @@ export function confirmModal(opts) {
       resolve(v);
     };
 
+    const focusable = () => [
+      ...card.querySelectorAll('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'),
+    ].filter((el) => !el.hasAttribute("disabled"));
+
     const onKey = (e) => {
       if (e.key === "Escape") {
         e.preventDefault();
         finish(false);
+        return;
       }
-      if (e.key === "Enter") {
+      if (e.key === "Enter" && !(e.target instanceof HTMLButtonElement)) {
         e.preventDefault();
         finish(true);
+        return;
+      }
+      // Focus trap — Tab cycles within the modal, Shift+Tab cycles backward.
+      if (e.key === "Tab") {
+        const els = focusable();
+        if (els.length === 0) return;
+        const first = els[0];
+        const last = els[els.length - 1];
+        if (e.shiftKey && document.activeElement === first) {
+          e.preventDefault();
+          last.focus();
+        } else if (!e.shiftKey && document.activeElement === last) {
+          e.preventDefault();
+          first.focus();
+        }
       }
     };
 
