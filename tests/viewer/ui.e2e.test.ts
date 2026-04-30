@@ -295,22 +295,50 @@ describe.skipIf(!RUN)("viewer UI e2e", () => {
     const { page, errs } = await makePage();
     await page.goto(`${viewerUrl}/`, { waitUntil: "load" });
     await new Promise((r) => setTimeout(r, 700));
-    page.on("dialog", (d) => d.accept());
     // navigate to the real demo project tab if not active
-    await page.evaluate((hash) => {
+    await page.evaluate(() => {
       const t = [...document.querySelectorAll(".home-tab")].find((el) => /uie2e-app/i.test(el.textContent ?? ""));
       (t as HTMLElement | undefined)?.click();
-      void hash;
-    }, projHash);
+    });
     await new Promise((r) => setTimeout(r, 600));
     const before = await page.evaluate(() => document.querySelectorAll(".commit-row").length);
     await page.evaluate(() => (document.querySelector(".commit-row-li:first-child .commit-row-kebab .kebab-trigger") as HTMLElement).click());
     await new Promise((r) => setTimeout(r, 300));
     await page.evaluate(() => (document.querySelector(".commit-row-li:first-child .kebab-item") as HTMLElement).click());
+    await new Promise((r) => setTimeout(r, 400));
+    // Modal should be open. Verify it's our Frank-styled one, not the
+    // native confirm — our modal has .modal-card; native has none.
+    const modalOpen = await page.evaluate(() => !!document.querySelector(".modal-card"));
+    expect(modalOpen).toBe(true);
+    // Click the destructive confirm
+    await page.evaluate(() => (document.querySelector('.modal-button-destructive') as HTMLElement).click());
     await new Promise((r) => setTimeout(r, 1500));
     const after = await page.evaluate(() => document.querySelectorAll(".commit-row").length);
     expect(after).toBe(before - 1);
     expect(errs).toEqual([]);
+    await page.close();
+  });
+
+  it("confirm modal: ESC cancels (snapshot count unchanged)", async () => {
+    const { page } = await makePage();
+    await page.goto(`${viewerUrl}/`, { waitUntil: "load" });
+    await new Promise((r) => setTimeout(r, 700));
+    await page.evaluate(() => {
+      const t = [...document.querySelectorAll(".home-tab")].find((el) => /uie2e-app/i.test(el.textContent ?? ""));
+      (t as HTMLElement | undefined)?.click();
+    });
+    await new Promise((r) => setTimeout(r, 600));
+    const before = await page.evaluate(() => document.querySelectorAll(".commit-row").length);
+    await page.evaluate(() => (document.querySelector(".commit-row-li:first-child .commit-row-kebab .kebab-trigger") as HTMLElement).click());
+    await new Promise((r) => setTimeout(r, 300));
+    await page.evaluate(() => (document.querySelector(".commit-row-li:first-child .kebab-item") as HTMLElement).click());
+    await new Promise((r) => setTimeout(r, 400));
+    await page.keyboard.press("Escape");
+    await new Promise((r) => setTimeout(r, 300));
+    const modalGone = await page.evaluate(() => !document.querySelector(".modal-card"));
+    expect(modalGone).toBe(true);
+    const after = await page.evaluate(() => document.querySelectorAll(".commit-row").length);
+    expect(after).toBe(before); // unchanged
     await page.close();
   });
 

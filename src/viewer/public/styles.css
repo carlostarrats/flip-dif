@@ -448,10 +448,17 @@
   text-decoration: none;
   font-size: var(--text-sm);
   padding: var(--space-2) var(--space-3);
-  border: 1px solid transparent;
+  border: 1px solid var(--border);
   border-radius: var(--radius);
+  transition: border-color var(--duration-base) var(--ease-standard),
+              background var(--duration-base) var(--ease-standard),
+              color var(--duration-base) var(--ease-standard);
 }
-.back:hover { color: var(--foreground); border-color: var(--border); }
+.back:hover {
+  color: var(--foreground);
+  border-color: var(--ring);
+  background: var(--muted);
+}
 
 .commit, .route { min-width: 0; max-width: 280px; }
 .spacer { flex: 1; }
@@ -657,3 +664,84 @@
   max-width: 360px;
 }
 .toast:hover { border-color: var(--ring); }
+
+/* ── Modal (Frank-style confirm dialog, replaces native confirm()) ─────── */
+
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: color-mix(in oklch, black, transparent 40%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: var(--space-6);
+  overflow-y: auto;
+}
+.modal-card {
+  width: 100%;
+  max-width: 480px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-lg);
+  display: flex;
+  flex-direction: column;
+}
+.modal-body {
+  padding: var(--space-5);
+}
+.modal-body > * + * { margin-top: var(--space-3); }
+.modal-title {
+  font-size: var(--text-lg);
+  font-weight: 500;
+  color: var(--foreground);
+  line-height: 1.3;
+}
+.modal-lede {
+  font-size: var(--text-sm);
+  line-height: 1.6;
+  color: var(--muted-foreground);
+  white-space: pre-line;
+}
+.modal-actions {
+  display: flex;
+  gap: var(--space-2);
+  justify-content: flex-end;
+  padding: var(--space-3) var(--space-5);
+  border-top: 1px solid var(--border);
+}
+.modal-button {
+  background: transparent;
+  color: var(--foreground);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: var(--space-2) var(--space-4);
+  font-family: var(--font-sans);
+  font-size: var(--text-sm);
+  cursor: pointer;
+  transition: border-color var(--duration-base) var(--ease-standard),
+              background var(--duration-base) var(--ease-standard),
+              color var(--duration-base) var(--ease-standard);
+}
+.modal-button:hover { border-color: var(--ring); background: var(--muted); }
+.modal-button:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 1px;
+}
+.modal-button-secondary { color: var(--muted-foreground); }
+.modal-button-secondary:hover { color: var(--foreground); }
+.modal-button-destructive {
+  color: var(--destructive);
+  border-color: var(--destructive);
+}
+.modal-button-destructive:hover {
+  background: color-mix(in oklch, var(--destructive), transparent 88%);
+  border-color: var(--destructive);
+}
+.modal-button-primary {
+  color: var(--primary-foreground);
+  background: var(--primary);
+  border-color: var(--primary);
+}
+.modal-button-primary:hover { background: var(--accent); }

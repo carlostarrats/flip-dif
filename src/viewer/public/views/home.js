@@ -1,5 +1,6 @@
 import { escapeHtml, rel } from "/views/lib.js";
 import { mountKebab } from "/views/menu.js";
+import { confirmModal } from "/views/modal.js";
 
 export async function renderHome(root) {
   root.innerHTML = `<div class="home"><div class="empty">…</div></div>`;
@@ -108,7 +109,13 @@ export async function renderHome(root) {
             label: "Delete project",
             destructive: true,
             onClick: async () => {
-              if (!confirm(`Delete project "${active.name}" and all its snapshots? This can't be undone.`)) return;
+              const ok = await confirmModal({
+                title: `Delete project "${active.name}"?`,
+                body: `This removes all of flip's captured snapshots for this project from ~/.flip and stops the daemon from watching it. Your project files and git history are untouched.`,
+                confirmLabel: "Delete project",
+                destructive: true,
+              });
+              if (!ok) return;
               const r = await fetch(`/api/projects/${active.hashedCwd}`, { method: "DELETE" });
               if (!r.ok) {
                 alert("Failed to delete project.");
@@ -134,7 +141,13 @@ export async function renderHome(root) {
               label: "Delete snapshot",
               destructive: true,
               onClick: async () => {
-                if (!confirm(`Delete flip's snapshot for commit ${sha.slice(0, 7)}?\n\nThis removes the captured images from ~/.flip only — your git commit and project files are untouched.`)) return;
+                const ok = await confirmModal({
+                  title: `Delete flip's snapshot for commit ${sha.slice(0, 7)}?`,
+                  body: `This removes the captured images from ~/.flip only.\nYour git commit and project files are untouched.`,
+                  confirmLabel: "Delete snapshot",
+                  destructive: true,
+                });
+                if (!ok) return;
                 const r = await fetch(`/api/projects/${active.hashedCwd}/snapshots/${sha}`, { method: "DELETE" });
                 if (!r.ok) {
                   alert("Failed to delete snapshot.");
