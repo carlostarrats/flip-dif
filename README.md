@@ -4,6 +4,13 @@
 
 <img width="1312" height="1061" alt="Screenshot 2026-04-29 at 12 59 01 PM" src="https://github.com/user-attachments/assets/7243c452-d727-40c3-a41d-59fbf1bd4d9c" />
 
+<table>
+  <tr>
+     <td><img src="https://github.com/user-attachments/assets/d54aafa0-ad7c-4669-9d87-3b54d5762999"></td>
+     <td><img src="https://github.com/user-attachments/assets/f30a1262-0a53-495a-bb48-16c0ab86ebc8"></td>
+   </tr>
+ </table>
+
 You ask Claude (or Cursor, or whoever) to "tighten up the dashboard spacing." It edits five files. Tests pass. You alt-tab to your dev server, eyeball the page, try to remember what it looked like five minutes ago. Did the fix actually land? Did it nudge anything else?
 
 `flip` is a local CLI daemon that captures a full-page screenshot of every page your agent touches, on every git commit. A browser-based viewer at `localhost:42069` lets you toggle between **before** and **after** by feel, or switch to **diff mode** to see exactly which pixels moved. No test suite, no baselines, no cloud — just a visual record of every commit's effect on the screen.
