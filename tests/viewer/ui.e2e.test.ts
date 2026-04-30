@@ -235,8 +235,25 @@ describe.skipIf(!RUN)("viewer UI e2e", () => {
       (o[o.length - 1] as HTMLElement).click();
     });
     await new Promise((r) => setTimeout(r, 600));
-    const beforeDisabled = await page.evaluate(() => document.querySelector('button.mode[data-m="before"]')?.hasAttribute("disabled"));
-    expect(beforeDisabled).toBe(true);
+    // before/diff are now always enabled — click "before" and assert the
+    // explanatory message renders rather than a broken image.
+    await page.click('button.mode[data-m="before"]');
+    await new Promise((r) => setTimeout(r, 300));
+    const messageText = await page.evaluate(() => document.querySelector(".canvas-message-headline")?.textContent);
+    expect(messageText).toBeTruthy();
+    expect(messageText?.toLowerCase()).toContain("no prior capture");
+    await page.close();
+  });
+
+  it("first commit: clicking 'diff' shows explanatory message instead of broken image", async () => {
+    const { page } = await makePage();
+    const oldestSha = (await listSnapshotShas())[2];
+    await page.goto(`${viewerUrl}/#/project/${projHash}/${oldestSha}`, { waitUntil: "load" });
+    await new Promise((r) => setTimeout(r, 700));
+    await page.click('button.mode[data-m="diff"]');
+    await new Promise((r) => setTimeout(r, 300));
+    const text = await page.evaluate(() => document.querySelector(".canvas-message-headline")?.textContent);
+    expect(text?.toLowerCase()).toContain("no diff for the first capture");
     await page.close();
   });
 

@@ -33,13 +33,28 @@ export async function renderProject(root, hashedCwd, initialSha) {
       root.innerHTML = `<div class="empty">No capture for this route.</div>`;
       return;
     }
-    let src;
-    if (mode === "after" || (mode !== "after" && !before)) {
-      src = imgUrl(hashedCwd, after.sha, route);
+
+    // Decide what the canvas shows. For the very first capture there's no
+    // prior to compare against, so before/diff render an explanatory state
+    // instead of an image — clearer than the buttons being silently no-op.
+    const noPrior = !before;
+    let canvasInner;
+    if (mode === "after") {
+      canvasInner = `<img src="${imgUrl(hashedCwd, after.sha, route)}" width="${cap.width}" height="${cap.height}" alt="" />`;
     } else if (mode === "before") {
-      src = imgUrl(hashedCwd, before.sha, route);
+      canvasInner = noPrior
+        ? `<div class="canvas-message">
+             <p class="canvas-message-headline">No prior capture for <code>${escapeHtml(route)}</code>.</p>
+             <p class="canvas-message-lede">This is the earliest snapshot flip has on disk for this route — there's nothing to compare against yet. Switch to <strong>after</strong> to see this capture, or pick a newer commit from the dropdown.</p>
+           </div>`
+        : `<img src="${imgUrl(hashedCwd, before.sha, route)}" width="${cap.width}" height="${cap.height}" alt="" />`;
     } else {
-      src = `/api/diff?cwd=${hashedCwd}&from=${before.sha}&to=${after.sha}&route=${encodeURIComponent(route)}`;
+      canvasInner = noPrior
+        ? `<div class="canvas-message">
+             <p class="canvas-message-headline">No diff for the first capture.</p>
+             <p class="canvas-message-lede">A diff highlights pixels that changed between two snapshots. This is the earliest one for <code>${escapeHtml(route)}</code>, so there's nothing to compare against. Pick a newer commit and the diff will light up.</p>
+           </div>`
+        : `<img src="/api/diff?cwd=${hashedCwd}&from=${before.sha}&to=${after.sha}&route=${encodeURIComponent(route)}" width="${cap.width}" height="${cap.height}" alt="" />`;
     }
 
     root.innerHTML = `
@@ -48,12 +63,12 @@ export async function renderProject(root, hashedCwd, initialSha) {
         <div class="commit-host"></div>
         <div class="route-host"></div>
         <span class="spacer"></span>
-        <button class="mode" data-m="before" aria-pressed="${mode === "before"}" ${!before ? "disabled" : ""}>before</button>
+        <button class="mode" data-m="before" aria-pressed="${mode === "before"}">before</button>
         <button class="mode" data-m="after" aria-pressed="${mode === "after"}">after</button>
-        <button class="mode" data-m="diff" aria-pressed="${mode === "diff"}" ${!before ? "disabled" : ""}>diff</button>
+        <button class="mode" data-m="diff" aria-pressed="${mode === "diff"}">diff</button>
       </header>
       <main class="canvas">
-        <img src="${src}" width="${cap.width}" height="${cap.height}" alt="" />
+        ${canvasInner}
       </main>
     `;
 

@@ -1,0 +1,35 @@
+import { launchBrowser } from '/Users/carlostarrats/Documents/Flip/dist/capture/browser.js';
+import { writeFileSync } from 'node:fs';
+import { mkdtempSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import { startViewer } from '/Users/carlostarrats/Documents/Flip/dist/viewer/server.js';
+import { registerProject } from '/Users/carlostarrats/Documents/Flip/dist/storage/projects.js';
+import { writeSnapshot } from '/Users/carlostarrats/Documents/Flip/dist/storage/snapshots.js';
+import { hashCwd } from '/Users/carlostarrats/Documents/Flip/dist/storage/paths.js';
+import { PNG } from 'pngjs';
+
+const HOME = mkdtempSync(join(tmpdir(), 'shoot-'));
+const CWD = '/visual/main';
+const png = (() => { const p = new PNG({ width: 800, height: 600 }); p.data.fill(91); return PNG.sync.write(p); })();
+registerProject(HOME, CWD, { cwd: CWD, name: 'demo', framework: 'next-app', lastSeen: Date.now(), url: 'http://localhost:3000' });
+writeSnapshot(HOME, CWD, { sha: '1'.repeat(40), message: 'init', timestamp: Date.now() }, [{ route: '/', pngBuffer: png, width: 800, height: 600 }]);
+
+const viewer = await startViewer({ home: HOME, port: 0 });
+const browser = await launchBrowser();
+const page = await browser.newPage();
+await page.setViewport({ width: 1400, height: 900 });
+await page.goto(`http://127.0.0.1:${viewer.port}/#/project/${hashCwd(CWD)}`, { waitUntil: 'load' });
+await new Promise(r => setTimeout(r, 600));
+await page.click('button.mode[data-m="before"]');
+await new Promise(r => setTimeout(r, 400));
+const buf = await page.screenshot({ type: 'png' });
+writeFileSync('/tmp/first-commit-before.png', Buffer.from(buf));
+await page.click('button.mode[data-m="diff"]');
+await new Promise(r => setTimeout(r, 400));
+const buf2 = await page.screenshot({ type: 'png' });
+writeFileSync('/tmp/first-commit-diff.png', Buffer.from(buf2));
+await page.close();
+await browser.close();
+await viewer.stop();
+console.log('done');

@@ -121,7 +121,9 @@ export async function renderHome(root) {
         ],
       });
 
-      // Per-commit kebab on each row.
+      // Per-commit kebab on each row. Labelled "Delete snapshot" to make
+      // clear flip is removing its own captured image — the user's git
+      // history is untouched.
       body.querySelectorAll(".commit-row-kebab").forEach((host) => {
         const sha = host.dataset.sha;
         const cap = host.dataset.label ?? sha.slice(0, 7);
@@ -129,10 +131,10 @@ export async function renderHome(root) {
           ariaLabel: `Actions for ${cap}`,
           items: [
             {
-              label: "Delete commit",
+              label: "Delete snapshot",
               destructive: true,
               onClick: async () => {
-                if (!confirm(`Delete the snapshot for commit ${sha.slice(0, 7)}? This can't be undone.`)) return;
+                if (!confirm(`Delete flip's snapshot for commit ${sha.slice(0, 7)}?\n\nThis removes the captured images from ~/.flip only — your git commit and project files are untouched.`)) return;
                 const r = await fetch(`/api/projects/${active.hashedCwd}/snapshots/${sha}`, { method: "DELETE" });
                 if (!r.ok) {
                   alert("Failed to delete snapshot.");

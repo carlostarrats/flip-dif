@@ -401,6 +401,39 @@
 }
 .canvas img { display: block; }
 
+/* Empty/explanatory state shown inside the canvas — used when the user
+ * clicks before/diff on the very first capture (no prior to compare). */
+.canvas-message {
+  max-width: 520px;
+  margin: var(--space-12) auto;
+  padding: var(--space-6);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--card);
+}
+.canvas-message > * + * { margin-top: var(--space-3); }
+.canvas-message-headline {
+  font-size: var(--text-base);
+  color: var(--foreground);
+  font-weight: 500;
+}
+.canvas-message-lede {
+  font-size: var(--text-sm);
+  line-height: 1.6;
+  color: var(--muted-foreground);
+}
+.canvas-message code {
+  background: var(--muted);
+  padding: 0 var(--space-1);
+  border-radius: var(--radius-sm);
+  color: var(--foreground);
+  font-size: 0.95em;
+}
+.canvas-message strong {
+  color: var(--foreground);
+  font-weight: 500;
+}
+
 .empty {
   padding: var(--space-12) var(--space-6);
   text-align: center;
