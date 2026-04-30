@@ -93,6 +93,12 @@ function proxy(
         const outHeaders = { ...upstreamRes.headers };
         delete outHeaders["content-encoding"];
         delete outHeaders["transfer-encoding"];
+        // Force the capture browser to refetch — without this, Chromium
+        // serves the cached HTML from the previous commit's capture and
+        // the new screenshot is byte-identical to the old one.
+        outHeaders["cache-control"] = "no-store, must-revalidate";
+        outHeaders["pragma"] = "no-cache";
+        outHeaders["expires"] = "0";
         outHeaders["content-length"] = String(body.length);
         if (!res.headersSent) {
           res.writeHead(upstreamRes.statusCode ?? 200, outHeaders);

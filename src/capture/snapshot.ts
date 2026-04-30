@@ -14,6 +14,10 @@ export async function captureRoute(
   expectedSha: string,
 ): Promise<CaptureResult> {
   await page.setViewport({ width: 1280, height: 800, deviceScaleFactor: 1 });
+  // Defense in depth: even if the dev server / proxy emits cacheable headers,
+  // Chromium would reuse the previous capture's HTML for the same URL and the
+  // new screenshot would be byte-identical to the old one.
+  await page.setCacheEnabled(false);
   const ready = await waitForReady(page, url, expectedSha);
   const dims = await page.evaluate(() => ({
     width: document.documentElement.scrollWidth,

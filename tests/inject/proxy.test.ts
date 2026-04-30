@@ -105,6 +105,21 @@ describe("injection proxy", () => {
     await up.close();
   });
 
+  it("emits Cache-Control: no-store on HTML responses (regression: byte-identical captures)", async () => {
+    const up = await startUpstream((_req, res) => {
+      res.setHeader("content-type", "text/html");
+      res.setHeader("cache-control", "max-age=3600"); // upstream wants caching
+      res.end("<html><body><h1>x</h1></body></html>");
+    });
+    const proxy = await startInjectionProxy({ targetUrl: up.url });
+    proxy.setBuildId("xx");
+    const r = await fetch(proxy.url + "/");
+    expect(r.headers.get("cache-control")).toMatch(/no-store/);
+    expect(r.headers.get("pragma")).toBe("no-cache");
+    await proxy.stop();
+    await up.close();
+  });
+
   it("decodes gzip then injects", async () => {
     const up = await startUpstream((_req, res) => {
       const html = "<html><body><h1>hi</h1></body></html>";
